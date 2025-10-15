@@ -1,3 +1,4 @@
+import asyncio
 from datetime import timedelta
 from typing import Annotated
 
@@ -56,7 +57,7 @@ async def login_for_access_token(
     :param settings: Объект-настройки для взаимодействия с переменными окружения из .env-файла
     :return: JSON-объект с данными о токене доступа
     """
-    user = authenticate_user(form_data.username, form_data.password, connection)
+    user = await authenticate_user(form_data.username, form_data.password, connection)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -64,12 +65,12 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
+    access_token = await create_access_token(
         settings, data={"sub": user["username"]}, expires_delta=access_token_expires
     )
 
     refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    refresh_token = create_access_token(
+    refresh_token = await create_access_token(
         settings,
         data={"sub": user["username"], "type": "refresh"},
         expires_delta=refresh_token_expires,
@@ -82,9 +83,10 @@ async def login_for_access_token(
 
 
 @auth_router.get("/suc_auth")
-def successfull_auth():
+async def successfull_auth():
     """
     Эндпоинт для редиректа после успешной авторизации
     :return: JSON-оповещение
     """
+    await asyncio.sleep(0.01)
     return {"message": "Авторизация успешна, токен доступа сохранен в куках!"}

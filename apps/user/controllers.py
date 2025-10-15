@@ -8,7 +8,7 @@ from apps.auth.services import pwd_context, ProtectionDep
 
 
 @user_router.post("/user/")
-def create_user(
+async def create_user(
     user: Annotated[UserCreate, Form()],
     connection: ConnectionDep,
 ):
@@ -24,14 +24,14 @@ def create_user(
         extra_data = {"hashed_password": hashed_password}
         user_dict.update(extra_data)
         user_model = User.model_validate(user_dict)
-        connection.create_user(user_model)
+        await connection.create_user(user_model)
         return {"message": f"user is created, his dict is: {user_dict}"}
     except (AttributeError, Exception) as e:
         return {"message": f"something_went_wrong...{e}"}
 
 
 @user_router.post("/users/")
-def create_users(
+async def create_users(
     users: Annotated[list[UserCreate], Body()],
     connection: ConnectionDep,
     protection: ProtectionDep,
@@ -53,7 +53,7 @@ def create_users(
                 user_dict.update(extra_data)
                 list_of_users.append(user_dict)
                 user_model = User.model_validate(user_dict)
-                connection.create_user(user_model)
+                await connection.create_user(user_model)
             return {"message": f"Пользователи созданы!: {list_of_users}"}
 
     except Exception as e:
@@ -61,7 +61,7 @@ def create_users(
 
 
 @middleware_protected_app.get("/users/{user_id}", response_model=UserPublic)
-def read_user(
+async def read_user(
     connection: ConnectionDep,
     user_id: Annotated[int, Path(title="Идентификатор пользователя", ge=0, le=1000)],
 ):
@@ -72,7 +72,7 @@ def read_user(
     :return: Объект пользователь, валидируемый моделью UserPublic
     """
     try:
-        user_dict = connection.read_user_by_id(user_id)
+        user_dict = await connection.read_user_by_id(user_id)
         if not user_dict:
             raise HTTPException(status_code=404, detail="Пользователь не найден")
         return user_dict
@@ -83,7 +83,7 @@ def read_user(
 
 
 @user_router.get("/users/", response_model=list[UserPublic])
-def read_users_list(
+async def read_users_list(
     connection: ConnectionDep,
     protection: ProtectionDep,
     start_index: Annotated[
@@ -115,14 +115,14 @@ def read_users_list(
     """
     try:
         if protection:
-            users_list = connection.read_users(start_index, end_index)
+            users_list = await connection.read_users(start_index, end_index)
             return users_list
     except Exception as e:
         return {"message": f"Возникла ошибка: {e}"}
 
 
 @user_router.patch("/users/{user_id}", response_model=UserPublic)
-def update_user(
+async def update_user(
     user_id: Annotated[int, Path(title="Идентификатор пользователя", ge=0, le=1000)],
     user: Annotated[UserCreate, Form()],
     connection: ConnectionDep,
@@ -138,7 +138,7 @@ def update_user(
     """
     try:
         if protection:
-            user_from_db = connection.read_user_by_id(user_id)
+            user_from_db = await connection.read_user_by_id(user_id)
             if not user_from_db:
                 raise HTTPException(status_code=404, detail="Пользователь не найден")
             user_data = user.model_dump(exclude_unset=True)
@@ -156,7 +156,7 @@ def update_user(
 
 
 @user_router.delete("/users/{user_id}")
-def delete_user(
+async def delete_user(
     user_id: Annotated[int, Path(title="Идентификатор пользователя", ge=0, le=1000)],
     connection: ConnectionDep,
     protection: ProtectionDep,
@@ -170,7 +170,7 @@ def delete_user(
     """
     try:
         if protection:
-            connection.delete_user(user_id)
+            await connection.delete_user(user_id)
             return {"message": f"User with ID: {user_id} has been deleted succesfully"}
     except Exception as e:
         return {"message": f"Возникла ошибка: {e}"}

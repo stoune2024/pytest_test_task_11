@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Optional
 
@@ -47,14 +48,15 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearerWithCookie(tokenUrl="token")
 
 
-def verify_password(plain_password, hashed_password):
+async def verify_password(plain_password, hashed_password):
     """
     Функция проверки соответствия полученного пароля и хранимого хеша
     """
+    await asyncio.sleep(0.01)
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def get_user(username: str, connection: ConnectionDep):
+async def get_user(username: str, connection: ConnectionDep):
     """
     Функция получения информации о пользователе из БД
     :param username: Логин пользователя
@@ -62,7 +64,7 @@ def get_user(username: str, connection: ConnectionDep):
     :return: Пользователь, валидированный моделью User
     """
     try:
-        user = connection.read_user_by_username(username)
+        user = await connection.read_user_by_username(username)
         return user
     except Exception:
         raise HTTPException(
@@ -72,7 +74,7 @@ def get_user(username: str, connection: ConnectionDep):
         )
 
 
-def authenticate_user(username: str, password: str, connection: ConnectionDep):
+async def authenticate_user(username: str, password: str, connection: ConnectionDep):
     """
     Функция аутентификации пользователя
     :param username: Логин пользователя
@@ -80,7 +82,7 @@ def authenticate_user(username: str, password: str, connection: ConnectionDep):
     :param connection: Объект типа Connection (соединение) для взаимодействия с БД
     :return: Пользователь, валидированный моделью User
     """
-    user = get_user(username, connection)
+    user = await get_user(username, connection)
     if not verify_password(password, user["hashed_password"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -90,7 +92,7 @@ def authenticate_user(username: str, password: str, connection: ConnectionDep):
     return user
 
 
-def create_access_token(
+async def create_access_token(
     settings: SettingsDep,
     data: dict,
     expires_delta: timedelta | None = None,
@@ -102,6 +104,7 @@ def create_access_token(
     :param expires_delta: Время истечения срока годности токена
     :return: JWT-токен, представляющий три строки, разделенные точками
     """
+    await asyncio.sleep(0.01)
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
@@ -146,7 +149,7 @@ async def verify_token(
             detail="Токен доступа не действителен",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    user = get_user(token_data.username, connection)
+    user = await get_user(token_data.username, connection)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
