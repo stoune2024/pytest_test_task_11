@@ -107,5 +107,6 @@ async def test_verify_token_user_unauthorized(mocker, settings, connection):
         "apps.auth.services.jwt.decode",
         return_value={"sub": "johndoe", "type": "bearer"},
     )
+    mocker.patch("apps.auth.services.get_user", return_value=None)
     with pytest.raises(HTTPException, match="Пользователь не авторизован!"):
         await verify_token(settings, "extra_secret_jwt_token", "request", connection)
