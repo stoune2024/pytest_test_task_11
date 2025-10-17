@@ -17,7 +17,7 @@ class AsyncDatabaseConnection:
     async def __aenter__(self):
         try:
             await asyncio.sleep(0.05)  # Имитация ожидания подключения к БД
-            print(f"Асинхронное подключение к базе данных с URL: {settings.db_url}")
+            print(f"Асинхронное подключение к базе данных с URL: {self.db_url}")
             return self
         except Exception as e:
             print(f"Ошибка при подключении к БД: {e}")
@@ -25,7 +25,7 @@ class AsyncDatabaseConnection:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         try:
             await asyncio.sleep(0.05)  # Имитация ожидания отключения от БД
-            print(f"Отключение от базы данных с URL: {settings.db_url}")
+            print(f"Отключение от базы данных с URL: {self.db_url}")
             print("Отключение от базы данных")
         except Exception as e:
             print(f"Ошибка при разрыве подключения с БД: {e}")

@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     DB_USER: str = Field(default="postgres")
     DB_PASS: str = Field(default="postgres")
     DB_NAME: str = Field(default="postgres")
+    TEST_DB_NAME: str = Field(default="test_postgres")
     SECRET_KEY: str
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
@@ -27,6 +28,13 @@ class Settings(BaseSettings):
         return (
             f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@"
             f"{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        )
+
+    @property
+    def test_db_url(self):
+        return (
+            f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@"
+            f"{self.DB_HOST}:{self.DB_PORT}/{self.TEST_DB_NAME}"
         )
 
 
