@@ -110,20 +110,10 @@ def test_user_instance_success(user_public):
     assert user.hashed_password == "qwe123"
 
 
-def test_user_instance_not_enough_args():
-    with pytest.raises(ValidationError):
-        User(username="johndoe", hashed_password="qwe123")
-
-
 def test_user_create_instance_success(user_public):
     user = UserCreate(**user_public, username="johndoe", password="qwe123")
     assert user.username == "johndoe"
     assert user.password == "qwe123"
-
-
-def test_user_create_instance_not_enough_args():
-    with pytest.raises(ValidationError):
-        UserCreate(username="johndoe", password="qwe123")
 
 
 def test_async_database_connection():

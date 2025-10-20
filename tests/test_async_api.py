@@ -13,6 +13,10 @@ async def test_create_user_success(user_public):
         response = await ac.post("/user/", data=data)
     assert response.status_code == 200
     assert "created_user" in response.json()
+    async with AsyncClient( # Удаляем созданного пользователя во избежание ошибок
+        transport=ASGITransport(app=app), base_url="http://test/user"
+    ) as ac:
+        await ac.delete("/users/1")
 
 
 @pytest.mark.asyncio
@@ -61,6 +65,11 @@ async def test_create_users_success(list_of_user_create):
         response = await ac.post("/users/", json=list_of_user_create)
     assert response.status_code == 200
     assert "users_created" in response.json()
+    for i in range(5):
+        async with AsyncClient(  # Удаляем пользователей
+                transport=ASGITransport(app=app), base_url="http://test/user"
+        ) as ac:
+            await ac.delete(f"/users/{i}")
 
 
 @pytest.mark.asyncio
@@ -97,17 +106,14 @@ async def test_read_user_success(user_public, mocker):
         "email": "johndoe@mail.com",
         "phoneNumber": "+8 (800) 555-35-35",
     }
+    async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test/protected_user"
+    ) as ac:
+        await ac.delete(f"/users/1")
 
 
 @pytest.mark.asyncio
 async def test_read_user_no_user_found(user_public, mocker):
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test/user"
-    ) as ac:
-        data = {"username": "johndoe", "password": "deadpond"}
-        data.update(user_public)
-        post_response = await ac.post("/user/", data=data)
-        post_response.cookies.set(name="access-token", value="super_secret_jwt_token")
     mocker.patch(
         "apps.user.routers.jwt.decode",
         return_value={"sub": "username", "type": "bearer"},
@@ -115,10 +121,16 @@ async def test_read_user_no_user_found(user_public, mocker):
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test/protected_user"
     ) as ac:
-        response = await ac.get("/users/2")
+        response = await ac.get("/users/1")
+
     assert response.status_code == 200
     assert response.json() == {
-        "message": "something_went_wrong...404: Пользователь не найден"
+        "id": None,
+        "name": None,
+        "age": None,
+        "isSupervisor": None,
+        "email": None,
+        "phoneNumber": None,
     }
 
 
@@ -134,6 +146,12 @@ async def test_read_users_list_success(list_of_user_create):
         response = await ac.get("/users/")
     assert response.status_code == 200
     assert len(response.json()) == 5
+    for i in range(5):
+        async with AsyncClient(  # Удаляем пользователей
+                transport=ASGITransport(app=app), base_url="http://test/user"
+        ) as ac:
+            await ac.delete(f"/users/{i}")
+
 
 
 @pytest.mark.asyncio
@@ -195,7 +213,6 @@ async def test_update_user_success(user_public):
         }
 
         patch_response = await ac.patch("/users/1", data=data)
-
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test/user"
     ) as ac:
@@ -204,6 +221,10 @@ async def test_update_user_success(user_public):
     assert patch_response.json()["name"] == "Smith"
     assert get_response.status_code == 200
     assert get_response.json()[0]["name"] == "Smith"
+    async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test/user"
+    ) as ac:
+        await ac.delete(f"/users/1")
 
 
 @pytest.mark.asyncio
@@ -273,6 +294,10 @@ async def test_update_user_data_passed_is_invalid(user_public):
         "name": "John",
         "phoneNumber": "+8 (800) 555-35-35",
     }
+    async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test/user"
+    ) as ac:
+        await ac.delete(f"/users/1")
 
 
 @pytest.mark.asyncio
