@@ -1,10 +1,15 @@
 from datetime import timedelta
+
+from starlette.requests import Request
+from starlette.responses import Response
+
 from apps.auth.services import (
     get_user,
     authenticate_user,
     create_access_token,
     verify_token,
 )
+from apps.user.routers import check_if_user_authorized
 from fastapi import HTTPException
 import pytest
 
@@ -110,3 +115,20 @@ async def test_verify_token_user_unauthorized(mocker, settings, connection):
     mocker.patch("apps.auth.services.get_user", return_value=None)
     with pytest.raises(HTTPException, match="Пользователь не авторизован!"):
         await verify_token(settings, "extra_secret_jwt_token", "request", connection)
+
+
+@pytest.mark.asyncio
+async def test_error_middleware_raises():
+    scope = {
+        "type": "http",
+        "method": "GET",
+        "path": "/middleware-error",
+        "headers": [],
+    }
+    request = Request(scope)
+
+    async def dummy_call_next(req):
+        return Response("ok")
+
+    with pytest.raises(HTTPException, match="Токен доступа не действителен"):
+        await check_if_user_authorized(request, dummy_call_next)

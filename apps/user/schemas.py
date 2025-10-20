@@ -12,22 +12,32 @@ unique_user_ids_list = []
 
 
 class UserPublic(BaseModel):
-    id: int = Field(
+    id: int | None = Field(
+        default=None,
         title="Уникальный идентификатор пользователя",
         description="Позволяет упорядочить пользователей",
     )
-    name: str = Field(
+    name: str | None = Field(
+        default=None,
         min_length=1,
         max_length=50,
         title="Имя пользователя",
         description="Имя пользователя",
     )
-    age: int = Field(gt=0, title="Возраст", description="Возраст пользователя")
-    is_supervisor: bool = Field(
-        title="Является ли админом", description="Проверка на суперпользователя"
+    age: int | None = Field(
+        default=None, gt=0, title="Возраст", description="Возраст пользователя"
     )
-    email: EmailStr = Field(title="Электронная почта", description="Электронная почта")
-    phone_number: str = Field(title="Номер телефона", description="Номер телефона")
+    is_supervisor: bool | None = Field(
+        default=None,
+        title="Является ли админом",
+        description="Проверка на суперпользователя",
+    )
+    email: EmailStr | None = Field(
+        default=None, title="Электронная почта", description="Электронная почта"
+    )
+    phone_number: str | None = Field(
+        default=None, title="Номер телефона", description="Номер телефона"
+    )
 
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
@@ -61,3 +71,8 @@ class UserCreate(UserPublic):
         title="Пароль пользователя",
         description="Используется Oauth",
     )
+
+
+class UserUpdate(UserPublic):
+    username: str | None = None
+    password: str | None = None

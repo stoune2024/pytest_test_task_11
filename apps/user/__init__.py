@@ -1,4 +1,4 @@
-from apps.user.routers import user_router
+from apps.user.routers import user_router, check_if_user_authorized
 from apps.user.services import ConnectionDep
 from apps.user.services import get_connection, AsyncDatabaseConnection
 from apps.user.schemas import UserPublic, User, UserCreate
@@ -11,4 +11,5 @@ __all__ = [
     "UserPublic",
     "User",
     "UserCreate",
+    "check_if_user_authorized",
 ]

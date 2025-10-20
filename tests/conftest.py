@@ -2,9 +2,11 @@ from dataclasses import dataclass
 
 import pytest
 import pytest_asyncio
-from fastapi.testclient import TestClient
 from apps.user.services import get_connection, AsyncDatabaseConnection
 from apps.user.schemas import UserPublic
+from apps.user.routers import middleware_protected_app
+from apps.auth.services import verify_token
+from apps.auth.schemas import TokenData
 from settings.settings import settings as project_settings
 from main import app
 import asyncio
@@ -45,21 +47,15 @@ async def connection():
         yield connection
 
 
-@pytest.fixture
-def client(connection):
+@pytest_asyncio.fixture
+async def protection():
     """
-    Фикстура, возврвщающая клиента
-    :param connection: Фикстура, возвращающая подключение
-    :return: Тестовый клиент, имитирующий REST API
+    Фикстура, возвращающая имитацию защищенного подключения
+    :return: Защищенное подключение
     """
-
-    def get_session_override():
-        return connection
-
-    app.dependency_overrides[get_connection] = get_session_override
-    client = TestClient(app)
-    yield client
-    app.dependency_overrides.clear()
+    await asyncio.sleep(0.001)
+    token = TokenData(username="secret_username")
+    return token
 
 
 @pytest.fixture
@@ -78,3 +74,48 @@ def user_public():
     )
     user_dict = user.model_dump()
     return user_dict
+
+
+@pytest.fixture
+def list_of_user_create():
+    """
+    Фикстура, возвращающая список со словарями пользователей
+    :return: лист со словарями пользователей UserCreate
+    """
+    return [
+        {
+            "id": i,
+            "name": f"User_{i}",
+            "age": (i + 1) * 10,
+            "is_supervisor": False,
+            "email": f"user_{i}@mail.com",
+            "phone_number": f"+8 ({i}00) 555-35-35",
+            "username": f"username_{i}",
+            "password": f"password_{i}",
+        }
+        for i in range(5)
+    ]
+
+
+@pytest.fixture(autouse=True)
+def override_dependencies(connection, protection):
+    """
+    Фикстура, автоматически срабатывающая перед каждым тестом и переписывающая зависимости
+    :param connection: Зависимость соединения
+    :param protection: Зависимость защиты
+    """
+
+    def get_connection_override():
+        return connection
+
+    def get_protection_override():
+        return protection
+
+    app.dependency_overrides[get_connection] = get_connection_override
+    app.dependency_overrides[verify_token] = get_protection_override
+    middleware_protected_app.dependency_overrides[get_connection] = (
+        get_connection_override
+    )
+    yield
+    app.dependency_overrides.clear()
+    middleware_protected_app.dependency_overrides.clear()

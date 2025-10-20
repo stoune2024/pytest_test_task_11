@@ -1,9 +1,9 @@
 from apps.user.routers import user_router, middleware_protected_app
-from apps.user.schemas import UserPublic, UserCreate, User
+from apps.user.schemas import UserPublic, UserCreate, User, UserUpdate
 from apps.user.services import ConnectionDep
 from fastapi import Form, Query, Path, HTTPException, Body
 from fastapi.exceptions import ResponseValidationError
-from typing import Annotated
+from typing import Annotated, Union
 from apps.auth.services import pwd_context, ProtectionDep
 
 
@@ -25,7 +25,7 @@ async def create_user(
         user_dict.update(extra_data)
         user_model = User.model_validate(user_dict)
         await connection.create_user(user_model)
-        return {"message": f"user is created, his dict is: {user_dict}"}
+        return {"created_user": f"{user_dict}"}
     except (AttributeError, Exception) as e:
         return {"message": f"something_went_wrong...{e}"}
 
@@ -48,19 +48,22 @@ async def create_users(
             list_of_users = []
             for user in users:
                 user_dict = user.model_dump()
-                hashed_password = pwd_context.hash(user.password)
-                extra_data = {"hashed_password": hashed_password}
-                user_dict.update(extra_data)
+                if user.password:
+                    hashed_password = pwd_context.hash(user.password)
+                    extra_data = {"hashed_password": hashed_password}
+                    user_dict.update(extra_data)
                 list_of_users.append(user_dict)
                 user_model = User.model_validate(user_dict)
                 await connection.create_user(user_model)
-            return {"message": f"Пользователи созданы!: {list_of_users}"}
+            return {"users_created": f"Пользователи созданы!: {list_of_users}"}
 
     except Exception as e:
         return {"message": f"Произошла ошибка: {e}"}
 
 
-@middleware_protected_app.get("/users/{user_id}", response_model=UserPublic)
+@middleware_protected_app.get(
+    "/users/{user_id}", response_model=Union[UserPublic, dict]
+)
 async def read_user(
     connection: ConnectionDep,
     user_id: Annotated[int, Path(title="Идентификатор пользователя", ge=0, le=1000)],
@@ -82,7 +85,7 @@ async def read_user(
         return {"message": f"something_went_wrong...{e}"}
 
 
-@user_router.get("/users/", response_model=list[UserPublic])
+@user_router.get("/users/", response_model=Union[list[UserPublic], dict])
 async def read_users_list(
     connection: ConnectionDep,
     protection: ProtectionDep,
@@ -121,10 +124,10 @@ async def read_users_list(
         return {"message": f"Возникла ошибка: {e}"}
 
 
-@user_router.patch("/users/{user_id}", response_model=UserPublic)
+@user_router.patch("/users/{user_id}", response_model=Union[UserPublic, dict])
 async def update_user(
     user_id: Annotated[int, Path(title="Идентификатор пользователя", ge=0, le=1000)],
-    user: Annotated[UserCreate, Form()],
+    user: Annotated[UserUpdate, Form()],
     connection: ConnectionDep,
     protection: ProtectionDep,
 ):
