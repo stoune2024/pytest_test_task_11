@@ -2,7 +2,6 @@ from dataclasses import dataclass
 
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient, ASGITransport
 
 from apps.user.services import get_connection, AsyncDatabaseConnection
 from apps.user.schemas import UserPublic

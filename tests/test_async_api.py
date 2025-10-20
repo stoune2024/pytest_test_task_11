@@ -13,7 +13,7 @@ async def test_create_user_success(user_public):
         response = await ac.post("/user/", data=data)
     assert response.status_code == 200
     assert "created_user" in response.json()
-    async with AsyncClient( # Удаляем созданного пользователя во избежание ошибок
+    async with AsyncClient(  # Удаляем созданного пользователя во избежание ошибок
         transport=ASGITransport(app=app), base_url="http://test/user"
     ) as ac:
         await ac.delete("/users/1")
@@ -67,7 +67,7 @@ async def test_create_users_success(list_of_user_create):
     assert "users_created" in response.json()
     for i in range(5):
         async with AsyncClient(  # Удаляем пользователей
-                transport=ASGITransport(app=app), base_url="http://test/user"
+            transport=ASGITransport(app=app), base_url="http://test/user"
         ) as ac:
             await ac.delete(f"/users/{i}")
 
@@ -107,9 +107,9 @@ async def test_read_user_success(user_public, mocker):
         "phoneNumber": "+8 (800) 555-35-35",
     }
     async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test/protected_user"
+        transport=ASGITransport(app=app), base_url="http://test/protected_user"
     ) as ac:
-        await ac.delete(f"/users/1")
+        await ac.delete("/users/1")
 
 
 @pytest.mark.asyncio
@@ -148,10 +148,9 @@ async def test_read_users_list_success(list_of_user_create):
     assert len(response.json()) == 5
     for i in range(5):
         async with AsyncClient(  # Удаляем пользователей
-                transport=ASGITransport(app=app), base_url="http://test/user"
+            transport=ASGITransport(app=app), base_url="http://test/user"
         ) as ac:
             await ac.delete(f"/users/{i}")
-
 
 
 @pytest.mark.asyncio
@@ -222,9 +221,9 @@ async def test_update_user_success(user_public):
     assert get_response.status_code == 200
     assert get_response.json()[0]["name"] == "Smith"
     async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test/user"
+        transport=ASGITransport(app=app), base_url="http://test/user"
     ) as ac:
-        await ac.delete(f"/users/1")
+        await ac.delete("/users/1")
 
 
 @pytest.mark.asyncio
@@ -295,9 +294,9 @@ async def test_update_user_data_passed_is_invalid(user_public):
         "phoneNumber": "+8 (800) 555-35-35",
     }
     async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test/user"
+        transport=ASGITransport(app=app), base_url="http://test/user"
     ) as ac:
-        await ac.delete(f"/users/1")
+        await ac.delete("/users/1")
 
 
 @pytest.mark.asyncio
@@ -338,3 +337,74 @@ async def test_delete_user_no_user_found(user_public):
     }
     assert get_response.status_code == 200
     assert get_response.json() == []
+
+
+@pytest.mark.asyncio
+async def test_login_for_access_token_success(mocker):
+    mocker.patch(
+        "apps.auth.controllers.authenticate_user",
+        return_value={"id": 1, "username": "johndoe"},
+    )
+    mocker.patch(
+        "apps.auth.controllers.create_access_token", return_value="secret.jwt.token"
+    )
+    mocker.patch("apps.auth.controllers.timedelta", return_value=30)
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test/auth"
+    ) as ac:
+        data = {"username": "johndoe", "password": "deadpond"}
+        response = await ac.post("/token", data=data)
+    assert response.status_code == 200
+    assert response.json() == {
+        "access_token": "secret.jwt.token",
+        "refresh_token": "secret.jwt.token",
+        "token_type": "bearer",
+    }
+
+
+@pytest.mark.asyncio
+async def test_login_for_access_token_no_user_found(mocker):
+    mocker.patch(
+        "apps.auth.controllers.authenticate_user",
+        return_value=False,
+    )
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test/auth"
+    ) as ac:
+        data = {"username": "johndoe", "password": "deadpond"}
+        response = await ac.post("/token", data=data)
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Пользователь не найден"}
+
+
+@pytest.mark.asyncio
+async def test_validate_login_form_success(mocker):
+    mocker.patch(
+        "apps.auth.controllers.login_for_access_token",
+        return_value={
+            "access_token": "secret.jwt.token",
+            "refresh_token": "secret.jwt.token",
+            "token_type": "bearer",
+        },
+    )
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test/auth"
+    ) as ac:
+        data = {"username": "johndoe", "password": "deadpond"}
+        response = await ac.post("/login", data=data)
+    assert response.status_code == 303
+    assert response.headers.get(key="authorization") == "Bearer secret.jwt.token"
+    assert response.cookies.get("access-token") == "secret.jwt.token"
+    assert response.is_redirect is True
+
+
+@pytest.mark.asyncio
+async def test_successfull_auth_success():
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test/auth"
+    ) as ac:
+        response = await ac.get("/suc_auth")
+    assert response.status_code == 200
+    assert response.json() == {
+        "message": "Авторизация успешна, токен доступа сохранен в куках!"
+    }
