@@ -1,5 +1,5 @@
 from datetime import timedelta
-
+import asyncio
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -10,6 +10,7 @@ from apps.auth.services import (
     verify_token,
 )
 from apps.user.routers import check_if_user_authorized
+from apps.external_API.services import fetch_data
 from fastapi import HTTPException
 import pytest
 
@@ -132,3 +133,32 @@ async def test_error_middleware_raises():
 
     with pytest.raises(HTTPException, match="Токен доступа не действителен"):
         await check_if_user_authorized(request, dummy_call_next)
+
+
+class AsyncMockResponse:
+    def __init__(self, data, status):
+        self.data = data
+        self.status = status
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await asyncio.sleep(0.001)
+
+    async def __aenter__(self):
+        await asyncio.sleep(0.001)
+        return self
+
+    def json(self):
+        return self
+
+
+@pytest.mark.asyncio
+async def test_fetch_external_API_data_success(mocker):
+    data = {"message": "ok"}
+    response = AsyncMockResponse(data=data, status=200)
+    mock = mocker.patch(
+        "apps.external_API.services.httpx.AsyncClient.get", return_value=response
+    )
+    resp = await fetch_data("https://jsonplaceholder.typicode.com/posts")
+    assert resp.status == 200
+    assert resp.data == {"message": "ok"}
+    mock.assert_called_once_with("https://jsonplaceholder.typicode.com/posts")

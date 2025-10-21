@@ -408,3 +408,48 @@ async def test_successfull_auth_success():
     assert response.json() == {
         "message": "Авторизация успешна, токен доступа сохранен в куках!"
     }
+
+
+@pytest.mark.asyncio
+async def test_fetch_external_API_data_success():
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test/integration"
+    ) as ac:
+        response = await ac.get("/json?offset=1&limit=3")
+        print(response.json())
+    assert response.status_code == 200
+    assert response.json() == [
+        {
+            "userId": 1,
+            "id": 1,
+            "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+            "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto",
+        },
+        {
+            "userId": 1,
+            "id": 2,
+            "title": "qui est esse",
+            "body": "est rerum tempore vitae\nsequi sint nihil reprehenderit dolor beatae ea dolores neque\nfugiat blanditiis voluptate porro vel nihil molestiae ut reiciendis\nqui aperiam non debitis possimus qui neque nisi nulla",
+        },
+    ]
+
+
+@pytest.mark.asyncio
+async def test_fetch_external_API_data_wrong_query():
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test/integration"
+    ) as ac:
+        response = await ac.get("/json?offset=1&limit=120")
+        print(response.json())
+    assert response.status_code == 422
+    assert response.json() == {
+        "detail": [
+            {
+                "type": "less_than_equal",
+                "loc": ["query", "limit"],
+                "msg": "Input should be less than or equal to 101",
+                "input": "120",
+                "ctx": {"le": 101},
+            }
+        ]
+    }

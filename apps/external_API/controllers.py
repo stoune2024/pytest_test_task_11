@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Union
 
 from fastapi import Query
 
@@ -6,7 +6,7 @@ from apps.external_API.routers import external_API_router
 from apps.external_API.services import fetch_data
 
 
-@external_API_router.get("/json")
+@external_API_router.get("/json", response_model=Union[list[dict], dict])
 async def fetch_external_API_data(
     offset: Annotated[
         int,
@@ -34,7 +34,7 @@ async def fetch_external_API_data(
     :return: Список сущностей или ошибка.
     """
     try:
-        result = await fetch_data()
+        result = await fetch_data("https://jsonplaceholder.typicode.com/posts")
         return result[offset - 1 : offset - 2 + limit]
     except Exception as e:
         return {"message": e}
