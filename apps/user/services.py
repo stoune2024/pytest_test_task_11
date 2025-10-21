@@ -1,5 +1,6 @@
 import asyncio
 from typing import Annotated, Any
+
 from fastapi import Depends
 from settings.settings import settings
 from apps.user.schemas import User

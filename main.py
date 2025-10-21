@@ -3,6 +3,7 @@ from uvicorn import run
 
 from apps.user.controllers import user_router, middleware_protected_app
 from apps.auth.controllers import auth_router
+from apps.external_API.controllers import external_API_router
 
 
 app = FastAPI(
@@ -16,6 +17,7 @@ app = FastAPI(
 
 app.include_router(user_router, prefix="/user")
 app.include_router(auth_router, prefix="/auth")
+app.include_router(external_API_router, prefix="/integration")
 
 app.mount("/protected_user", middleware_protected_app)
 
