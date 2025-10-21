@@ -1,8 +1,12 @@
 import pytest
 from httpx import AsyncClient, ASGITransport
 from main import app
+from pytest import mark
 
 
+@mark.services
+@mark.database
+@mark.controllers
 @pytest.mark.asyncio
 async def test_create_user_success(user_public):
     async with AsyncClient(
@@ -19,6 +23,9 @@ async def test_create_user_success(user_public):
         await ac.delete("/users/1")
 
 
+@mark.services
+@mark.database
+@mark.controllers
 @pytest.mark.asyncio
 async def test_create_user_no_username_passed(user_public):
     async with AsyncClient(
@@ -48,6 +55,9 @@ async def test_create_user_no_username_passed(user_public):
     }
 
 
+@mark.services
+@mark.database
+@mark.controllers
 @pytest.mark.asyncio
 async def test_create_user_no_data_passed():
     async with AsyncClient(
@@ -57,6 +67,9 @@ async def test_create_user_no_data_passed():
     assert response.status_code == 422
 
 
+@mark.services
+@mark.database
+@mark.controllers
 @pytest.mark.asyncio
 async def test_create_users_success(list_of_user_create):
     async with AsyncClient(
@@ -72,6 +85,9 @@ async def test_create_users_success(list_of_user_create):
             await ac.delete(f"/users/{i}")
 
 
+@mark.services
+@mark.database
+@mark.controllers
 @pytest.mark.asyncio
 async def test_create_users_no_data_passed():
     async with AsyncClient(
@@ -81,6 +97,9 @@ async def test_create_users_no_data_passed():
     assert response.status_code == 422
 
 
+@mark.services
+@mark.database
+@mark.controllers
 @pytest.mark.asyncio
 async def test_read_user_success(user_public, mocker):
     async with AsyncClient(
@@ -112,6 +131,9 @@ async def test_read_user_success(user_public, mocker):
         await ac.delete("/users/1")
 
 
+@mark.services
+@mark.database
+@mark.controllers
 @pytest.mark.asyncio
 async def test_read_user_no_user_found(user_public, mocker):
     mocker.patch(
@@ -134,6 +156,9 @@ async def test_read_user_no_user_found(user_public, mocker):
     }
 
 
+@mark.services
+@mark.database
+@mark.controllers
 @pytest.mark.asyncio
 async def test_read_users_list_success(list_of_user_create):
     async with AsyncClient(
@@ -153,6 +178,9 @@ async def test_read_users_list_success(list_of_user_create):
             await ac.delete(f"/users/{i}")
 
 
+@mark.services
+@mark.database
+@mark.controllers
 @pytest.mark.asyncio
 async def test_read_users_list_no_users_found():
     async with AsyncClient(
@@ -163,6 +191,9 @@ async def test_read_users_list_no_users_found():
     assert response.json() == []
 
 
+@mark.services
+@mark.database
+@mark.controllers
 @pytest.mark.asyncio
 async def test_read_users_list_wrong_query(list_of_user_create):
     async with AsyncClient(
@@ -188,6 +219,9 @@ async def test_read_users_list_wrong_query(list_of_user_create):
     }
 
 
+@mark.services
+@mark.database
+@mark.controllers
 @pytest.mark.asyncio
 async def test_update_user_success(user_public):
     async with AsyncClient(
@@ -226,6 +260,9 @@ async def test_update_user_success(user_public):
         await ac.delete("/users/1")
 
 
+@mark.services
+@mark.database
+@mark.controllers
 @pytest.mark.asyncio
 async def test_update_user_no_user_found(user_public):
     async with AsyncClient(
@@ -254,6 +291,9 @@ async def test_update_user_no_user_found(user_public):
     assert get_response.json() == []
 
 
+@mark.services
+@mark.database
+@mark.controllers
 @pytest.mark.asyncio
 async def test_update_user_data_passed_is_invalid(user_public):
     async with AsyncClient(
@@ -299,6 +339,9 @@ async def test_update_user_data_passed_is_invalid(user_public):
         await ac.delete("/users/1")
 
 
+@mark.services
+@mark.database
+@mark.controllers
 @pytest.mark.asyncio
 async def test_delete_user_success(user_public):
     async with AsyncClient(
@@ -319,6 +362,9 @@ async def test_delete_user_success(user_public):
     }
 
 
+@mark.services
+@mark.database
+@mark.controllers
 @pytest.mark.asyncio
 async def test_delete_user_no_user_found(user_public):
     async with AsyncClient(
@@ -339,6 +385,8 @@ async def test_delete_user_no_user_found(user_public):
     assert get_response.json() == []
 
 
+@mark.services
+@mark.controllers
 @pytest.mark.asyncio
 async def test_login_for_access_token_success(mocker):
     mocker.patch(
@@ -362,6 +410,8 @@ async def test_login_for_access_token_success(mocker):
     }
 
 
+@mark.services
+@mark.controllers
 @pytest.mark.asyncio
 async def test_login_for_access_token_no_user_found(mocker):
     mocker.patch(
@@ -377,6 +427,8 @@ async def test_login_for_access_token_no_user_found(mocker):
     assert response.json() == {"detail": "Пользователь не найден"}
 
 
+@mark.services
+@mark.controllers
 @pytest.mark.asyncio
 async def test_validate_login_form_success(mocker):
     mocker.patch(
@@ -398,6 +450,8 @@ async def test_validate_login_form_success(mocker):
     assert response.is_redirect is True
 
 
+@mark.services
+@mark.controllers
 @pytest.mark.asyncio
 async def test_successfull_auth_success():
     async with AsyncClient(
@@ -410,6 +464,8 @@ async def test_successfull_auth_success():
     }
 
 
+@mark.services
+@mark.controllers
 @pytest.mark.asyncio
 async def test_fetch_external_API_data_success():
     async with AsyncClient(
@@ -434,6 +490,8 @@ async def test_fetch_external_API_data_success():
     ]
 
 
+@mark.services
+@mark.controllers
 @pytest.mark.asyncio
 async def test_fetch_external_API_data_wrong_query():
     async with AsyncClient(

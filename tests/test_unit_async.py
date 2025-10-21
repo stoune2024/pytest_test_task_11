@@ -13,8 +13,11 @@ from apps.user.routers import check_if_user_authorized
 from apps.external_API.services import fetch_data
 from fastapi import HTTPException
 import pytest
+from pytest import mark
 
 
+@mark.services
+@mark.database
 @pytest.mark.asyncio
 async def test_get_user_success(mocker, connection):
     mocker.patch(
@@ -25,6 +28,8 @@ async def test_get_user_success(mocker, connection):
     assert result == {"id": 1, "username": "johndoe"}
 
 
+@mark.services
+@mark.database
 @pytest.mark.asyncio
 async def test_get_user_not_found(mocker):
     mocker.patch(
@@ -35,6 +40,8 @@ async def test_get_user_not_found(mocker):
         await get_user("johndoe", "connection")
 
 
+@mark.services
+@mark.database
 @pytest.mark.asyncio
 async def test_authenticate_user_success(mocker, connection):
     mocker.patch(
@@ -46,6 +53,8 @@ async def test_authenticate_user_success(mocker, connection):
     assert result == {"id": 1, "username": "johndoe", "hashed_password": "johncoffee"}
 
 
+@mark.services
+@mark.database
 @pytest.mark.asyncio
 async def test_authenticate_user_not_found(mocker):
     mocker.patch(
@@ -56,6 +65,8 @@ async def test_authenticate_user_not_found(mocker):
         await authenticate_user("username", "johncoffee", "connection")
 
 
+@mark.services
+@mark.database
 @pytest.mark.asyncio
 async def test_authenticate_user_wrong_password(mocker, connection):
     mocker.patch(
@@ -67,6 +78,7 @@ async def test_authenticate_user_wrong_password(mocker, connection):
         await authenticate_user("username", "johncoffee", connection)
 
 
+@mark.services
 @pytest.mark.asyncio
 async def test_create_access_token(mocker, settings):
     mocker.patch("apps.auth.services.jwt.encode", return_value="encoded_jwt_token")
@@ -78,6 +90,7 @@ async def test_create_access_token(mocker, settings):
     assert result == "encoded_jwt_token"
 
 
+@mark.services
 @pytest.mark.asyncio
 async def test_verify_token_success(mocker, settings, connection):
     mocker.patch(
@@ -94,6 +107,7 @@ async def test_verify_token_success(mocker, settings, connection):
     assert result.username == "johndoe"
 
 
+@mark.services
 @pytest.mark.asyncio
 async def test_verify_token_username_is_none(mocker, settings, connection):
     mocker.patch("apps.auth.services.jwt.decode", return_value={"type": "bearer"})
@@ -101,12 +115,14 @@ async def test_verify_token_username_is_none(mocker, settings, connection):
         await verify_token(settings, "extra_secret_jwt_token", "request", connection)
 
 
+@mark.services
 @pytest.mark.asyncio
 async def test_verify_token_invalid_token(mocker, settings, connection):
     with pytest.raises(HTTPException, match="Токен доступа не действителен"):
         await verify_token(settings, "extra_secret_jwt_token", "request", connection)
 
 
+@mark.services
 @pytest.mark.asyncio
 async def test_verify_token_user_unauthorized(mocker, settings, connection):
     mocker.patch(
@@ -118,6 +134,7 @@ async def test_verify_token_user_unauthorized(mocker, settings, connection):
         await verify_token(settings, "extra_secret_jwt_token", "request", connection)
 
 
+@mark.services
 @pytest.mark.asyncio
 async def test_error_middleware_raises():
     scope = {
@@ -151,6 +168,7 @@ class AsyncMockResponse:
         return self
 
 
+@mark.services
 @pytest.mark.asyncio
 async def test_fetch_external_API_data_success(mocker):
     data = {"message": "ok"}
